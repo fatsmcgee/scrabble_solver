@@ -34,7 +34,7 @@ fn main() {
                 boards.last().unwrap().print_board();
             },
             "undo" => {
-                if(boards.len() > 1){
+                if boards.len() > 1 {
                     boards.pop();
                 }
             },
@@ -70,7 +70,7 @@ fn main() {
                 match (letters, n) {
                     (Some(letters), n) => {
                         let letters =
-                            letterbag_from_string(String::from(letters));
+                            letterbag_from_string(&String::from(letters));
                         let board = boards.last().unwrap();
                         let solutions = board.find_all_valid_words(&letters,&dict);
                         print_top_solutions(&solutions,n);

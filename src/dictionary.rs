@@ -20,6 +20,13 @@ fn word_to_alpha_indices(w: &Word) -> Vec<u8> {
         .collect()
 }
 
+fn utf8_to_alpha_indices(w: &Vec<u8>) -> Vec<u8> {
+    w.iter()
+        .cloned()
+        .map(letter_alpha_idx)
+        .collect()
+}
+
 
 pub struct DictionaryTrie {
     entries: Vec<DictionaryTrieNode>
@@ -120,6 +127,10 @@ impl DictionaryTrie {
         self.are_alpha_indices_word(word_to_alpha_indices(s))
     }
 
+    pub fn is_word_utf8(&self, s: &Vec<u8>) -> bool {
+        self.are_alpha_indices_word(utf8_to_alpha_indices(s))
+    }
+
 
     pub fn are_alpha_indices_word(&self, word: Vec<u8>) -> bool {
         self.find_node_from_alpha_indices(word).map_or(false, |n| n.is_word())
@@ -176,10 +187,10 @@ mod tests {
 
         let mut ptr = trie.root();
         assert!(!ptr.is_word());
-        ptr = ptr.get_child('d').unwrap();
-        ptr = ptr.get_child('o').unwrap();
+        ptr = ptr.get_child(b'd').unwrap();
+        ptr = ptr.get_child(b'o').unwrap();
         assert!(!ptr.is_word());
-        ptr = ptr.get_child('g').unwrap();
+        ptr = ptr.get_child(b'g').unwrap();
         assert!(ptr.is_word());
     }
 

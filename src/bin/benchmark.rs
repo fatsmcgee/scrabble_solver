@@ -15,7 +15,7 @@ fn main() {
     board.add_word(Coord::new(6,6), Direction::Down, "goalie");
 
 
-    for i in 1..5 {
+    for _i in 1..5 {
         let now = Instant::now();
         let solutions = board.find_all_valid_words(&letterbag_from_string("*fsaebd"), &dict);
         let duration = (Instant::now() - now).as_seconds_f32();

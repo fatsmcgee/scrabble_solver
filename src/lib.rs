@@ -4,7 +4,6 @@ mod grid;
 mod util;
 
 use std::collections::{HashMap, VecDeque};
-use std::iter::FromIterator;
 use lazy_static::lazy_static;
 use std::slice::from_ref;
 
@@ -16,7 +15,6 @@ pub use dictionary::DictionaryTrie;
 use dictionary::DictionaryTrieNodePtr;
 pub use grid::Coord;
 use grid::Grid;
-use std::str::{from_utf8_unchecked, from_utf8};
 
 const CAPITAL_A_TO_Z:&str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 pub const WILDCARD_LETTER:Letter = b'*';
@@ -195,10 +193,10 @@ fn scrabble_letter_score(l: Letter) -> u32 {
     }
 }
 
-fn scrabble_letters_score(w: &Word) -> u32 {
-    w.bytes()
+fn scrabble_letters_score_utf8(w: &Vec<u8>) -> u32 {
+    w.iter()
         .fold(0, |score, l|
-            score + scrabble_letter_score(l))
+            score + scrabble_letter_score(*l))
 }
 
 pub fn print_top_solutions(solutions: &Vec<ScrabbleSolution>,
@@ -351,7 +349,6 @@ impl ScrabbleBoard {
                     &solution_so_far.letters_available;
 
                 for &bag_letter in letters_available.keys().into_iter() {
-                    let bag_letter_u8 = bag_letter as u8;
                     let actual_letters = if bag_letter == WILDCARD_LETTER {
                         //If the wildcard letter is used, go through all
                         // letters in the alphabet (capital denotes the wildcard version)
@@ -490,12 +487,10 @@ impl ScrabbleBoard {
         if letters_around.len() == 1 {
             WordAroundValidation::NothingAround
         } else {
-            //TODO: have trie take bytes directly to make this simpler
-            let word_around =
-                String::from_utf8(letters_around.iter().cloned().collect()).unwrap();
-            if dict_trie.is_word(&word_around.to_lowercase()) {
+            let word_around = letters_around.iter().cloned().collect();
+            if dict_trie.is_word_utf8(&word_around){
                 //Valid word
-                let base_score = scrabble_letters_score(&word_around);
+                let base_score = scrabble_letters_score_utf8(&word_around);
                 let final_score = match self.modifiers.get_unchecked(coord) {
                     None => base_score,
                     Some(Modifier::DoubleWord) => base_score * 2,
@@ -520,7 +515,7 @@ mod tests {
     #[test]
     fn empty_scrabble_board_works() {
         let mut b = ScrabbleBoard::empty_scrabble_board();
-        b.set_letter(Coord::new(0, 0), 'a');
+        b.set_letter(Coord::new(0, 0), b'a');
         println!("Hi");
         b.print_board();
     }
@@ -530,7 +525,7 @@ mod tests {
         let dict = DictionaryTrie::from_scrabble_ospd();
         let board = ScrabbleBoard::empty_scrabble_board();
         let letters =
-            letterbag_from_string(String::from("za"));
+            letterbag_from_string(&String::from("za"));
 
 
         let right_solutions = board.find_valid_words_coord(Coord::new(7, 6),
@@ -552,12 +547,12 @@ mod tests {
     fn get_anchored_solutions() {
         let dict = DictionaryTrie::from_scrabble_ospd();
         let mut board = ScrabbleBoard::empty_scrabble_board();
-        board.set_letter(Coord::new(6, 7), 'g');
-        board.set_letter(Coord::new(7, 7), 'o');
-        board.set_letter(Coord::new(8, 7), 'd');
+        board.set_letter(Coord::new(6, 7), b'g');
+        board.set_letter(Coord::new(7, 7), b'o');
+        board.set_letter(Coord::new(8, 7), b'd');
 
         let letters =
-            letterbag_from_string(String::from("d"));
+            letterbag_from_string(&String::from("d"));
 
         let right_solutions = board.find_valid_words_coord(Coord::new(7, 6),
                                                            Direction::Right,
