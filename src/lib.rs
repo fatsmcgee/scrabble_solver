@@ -525,7 +525,7 @@ mod tests {
         let dict = DictionaryTrie::from_scrabble_ospd();
         let board = ScrabbleBoard::empty_scrabble_board();
         let letters =
-            letterbag_from_string(&String::from("za"));
+            letterbag_from_string("za");
 
 
         let right_solutions = board.find_valid_words_coord(Coord::new(7, 6),
@@ -552,7 +552,7 @@ mod tests {
         board.set_letter(Coord::new(8, 7), b'd');
 
         let letters =
-            letterbag_from_string(&String::from("d"));
+            letterbag_from_string("d");
 
         let right_solutions = board.find_valid_words_coord(Coord::new(7, 6),
                                                            Direction::Right,
@@ -566,7 +566,8 @@ mod tests {
 
     #[test]
     fn test_scrabble_letters_score() {
-        let score1 = scrabble_letters_score(&String::from("za"));
+        let score1 =
+            scrabble_letters_score_utf8(&Vec::from("za".as_bytes()));
         assert_eq!(score1, 11);
     }
 }
