@@ -17,7 +17,7 @@ fn main() {
 
     for _i in 1..5 {
         let now = Instant::now();
-        let solutions = board.find_all_valid_words(&LetterBag::from_string("*fsaebd"), &dict);
+        let solutions = board.find_all_valid_words(&LetterBag::from_string("**saebd"), &dict);
         let duration = (Instant::now() - now).as_seconds_f32();
         println!("Took {} seconds", duration);
     }
