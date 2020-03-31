@@ -7,7 +7,7 @@ use ScrabbleSolver::{DictionaryTrie,
                      ScrabbleBoard,
                      Coord,
                      Direction,
-                     letterbag_from_string,
+                     LetterBag,
                      print_top_solutions};
 
 
@@ -70,7 +70,7 @@ fn main() {
                 match (letters, n) {
                     (Some(letters), n) => {
                         let letters =
-                            letterbag_from_string(letters);
+                            LetterBag::from_string(letters);
                         let board = boards.last().unwrap();
                         let solutions = board.find_all_valid_words(&letters,&dict);
                         print_top_solutions(&solutions,n);

@@ -5,7 +5,7 @@ use ScrabbleSolver::{DictionaryTrie,
                      ScrabbleBoard,
                      Coord,
                      Direction,
-                     letterbag_from_string,
+                     LetterBag,
                      print_top_solutions};
 
 fn main() {
@@ -17,7 +17,7 @@ fn main() {
 
     for _i in 1..5 {
         let now = Instant::now();
-        let solutions = board.find_all_valid_words(&letterbag_from_string("*fsaebd"), &dict);
+        let solutions = board.find_all_valid_words(&LetterBag::from_string("*fsaebd"), &dict);
         let duration = (Instant::now() - now).as_seconds_f32();
         println!("Took {} seconds", duration);
     }

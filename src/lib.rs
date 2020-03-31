@@ -1,6 +1,7 @@
 
 mod dictionary;
 mod grid;
+mod letter_bag;
 mod util;
 
 use std::collections::{HashMap, VecDeque};
@@ -9,6 +10,8 @@ use std::slice::from_ref;
 
 pub use util::Direction;
 use util::{Letter,Word};
+
+pub use letter_bag::LetterBag;
 
 
 pub use dictionary::DictionaryTrie;
@@ -41,43 +44,6 @@ lazy_static! {
     };
 }
 
-
-type LetterBag = HashMap<Letter, u32>;
-
-trait Multiset<T> {
-    fn decrement(&mut self, key: T);
-    fn decremented(&self, key: T) -> Self;
-}
-
-impl Multiset<Letter> for LetterBag {
-    fn decrement(&mut self, key: Letter) {
-        match self.get(&key) {
-            None => {}
-            Some(&i) => {
-                if i > 1 {
-                    self.insert(key, i - 1);
-                } else {
-                    self.remove(&key);
-                }
-            }
-        }
-    }
-
-    fn decremented(&self, key: Letter) -> LetterBag {
-        let mut new_bag = self.clone();
-        new_bag.decrement(key);
-        new_bag
-    }
-}
-
-pub fn letterbag_from_string(s: &str) -> LetterBag {
-    let mut lb = LetterBag::new();
-    for c in s.bytes() {
-        let count = lb.entry(c).or_insert(0);
-        *count += 1;
-    }
-    lb
-}
 
 
 #[derive(Clone, Debug)]
@@ -348,7 +314,7 @@ impl ScrabbleBoard {
                 let letters_available =
                     &solution_so_far.letters_available;
 
-                for &bag_letter in letters_available.keys().into_iter() {
+                for &bag_letter in letters_available.keys() {
                     let actual_letters = if bag_letter == WILDCARD_LETTER {
                         //If the wildcard letter is used, go through all
                         // letters in the alphabet (capital denotes the wildcard version)
@@ -525,7 +491,7 @@ mod tests {
         let dict = DictionaryTrie::from_scrabble_ospd();
         let board = ScrabbleBoard::empty_scrabble_board();
         let letters =
-            letterbag_from_string("za");
+            LetterBag::from_string("za");
 
 
         let right_solutions = board.find_valid_words_coord(Coord::new(7, 6),
@@ -552,7 +518,7 @@ mod tests {
         board.set_letter(Coord::new(8, 7), b'd');
 
         let letters =
-            letterbag_from_string("d");
+            LetterBag::from_string("d");
 
         let right_solutions = board.find_valid_words_coord(Coord::new(7, 6),
                                                            Direction::Right,
