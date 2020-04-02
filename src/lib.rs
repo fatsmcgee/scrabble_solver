@@ -1,23 +1,22 @@
-
 mod dictionary;
 mod grid;
 mod letter_bag;
 mod util;
 
 use std::collections::{HashMap, VecDeque};
-use lazy_static::lazy_static;
 use std::slice::from_ref;
+use lazy_static::lazy_static;
+use serde::Serialize;
+
 
 pub use util::Direction;
 use util::{Letter,Word};
-
 pub use letter_bag::LetterBag;
-
-
 pub use dictionary::DictionaryTrie;
 use dictionary::DictionaryTrieNodePtr;
 pub use grid::Coord;
 use grid::Grid;
+use std::fmt::{Display, Formatter, Error};
 
 const CAPITAL_A_TO_Z:&str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 pub const WILDCARD_LETTER:Letter = b'*';
@@ -75,12 +74,25 @@ pub struct ScrabbleBoard {
     letters: Grid<Option<Letter>>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct ScrabbleSolution {
-    word: Word,
-    score: u32,
-    direction: Direction,
-    start_coord: Coord,
+    pub word: Word,
+    pub score: u32,
+    pub direction: Direction,
+    pub start_coord: Coord,
+}
+
+impl Display for ScrabbleSolution {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        write!(f,
+               "{}: {},{}({}): {} points",
+                self.word,
+                self.start_coord.row,
+                self.start_coord.col,
+                if let Direction::Right = self.direction {"R"} else {"D"},
+                self.score);
+        Ok(())
+    }
 }
 
 struct ScrabbleSolutionBuilder<'a> {
@@ -165,6 +177,8 @@ fn scrabble_letters_score_utf8(w: &Vec<u8>) -> u32 {
             score + scrabble_letter_score(*l))
 }
 
+
+
 pub fn print_top_solutions(solutions: &Vec<ScrabbleSolution>,
                             limit: Option<usize>) {
     let mut sorted_solutions = solutions.clone();
@@ -216,7 +230,7 @@ impl ScrabbleBoard {
         }
     }
 
-    fn set_letter(&mut self, coord: Coord, l: Letter) {
+    pub fn set_letter(&mut self, coord: Coord, l: Letter) {
         self.letters.set(coord, Some(l))
     }
 
@@ -251,8 +265,8 @@ impl ScrabbleBoard {
     }
 
     pub fn find_all_valid_words(&self,
-                            letters_available:&LetterBag,
-                            dict: &DictionaryTrie) -> Vec<ScrabbleSolution> {
+                                letters_available:&LetterBag,
+                                dict: &DictionaryTrie) -> Vec<ScrabbleSolution> {
         let mut all_solutions = Vec::new();
         for i in 0..self.nrows() {
             for j in 0..self.ncols() {
@@ -374,7 +388,7 @@ impl ScrabbleBoard {
                                 addon_score: solution_so_far.addon_score + addon_score,
                                 letter_score: solution_so_far.letter_score + added_letter_score,
                                 word_multiplier:
-                                solution_so_far.word_multiplier * extra_word_multiplier,
+                                    solution_so_far.word_multiplier * extra_word_multiplier,
                             };
 
                             let next_solutions = self.find_valid_words_coord_helper(

@@ -1,7 +1,7 @@
 use super::util::Direction;
+use serde::Serialize;
 
-
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize)]
 pub struct Coord {
     pub row: i32,
     pub col: i32,

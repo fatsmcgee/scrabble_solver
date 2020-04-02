@@ -123,7 +123,7 @@ impl DictionaryTrie {
                       |node, code| node.get_child_idx(*code))
     }
 
-    pub fn is_word(&self, s: &Word) -> bool {
+    pub fn is_word_string(&self, s: &Word) -> bool {
         self.are_alpha_indices_word(word_to_alpha_indices(s))
     }
 
@@ -172,11 +172,11 @@ mod tests {
         trie.add_word(String::from("dog"));
         trie.add_word(String::from("dogcat"));
 
-        assert!(trie.is_word(&String::from("dog")));
-        assert!(trie.is_word(&String::from("dogcat")));
-        assert!(!trie.is_word(&String::from("do")));
-        assert!(!trie.is_word(&String::from("a")));
-        assert!(!trie.is_word(&String::from("dogcatz")));
+        assert!(trie.is_word_string(&String::from("dog")));
+        assert!(trie.is_word_string(&String::from("dogcat")));
+        assert!(!trie.is_word_string(&String::from("do")));
+        assert!(!trie.is_word_string(&String::from("a")));
+        assert!(!trie.is_word_string(&String::from("dogcatz")));
     }
 
     #[test]
@@ -197,6 +197,6 @@ mod tests {
     #[test]
     fn scrabble_trie() {
         let trie = DictionaryTrie::from_scrabble_ospd();
-        assert!(trie.is_word(&String::from("brawns")));
+        assert!(trie.is_word_string(&String::from("brawns")));
     }
 }
