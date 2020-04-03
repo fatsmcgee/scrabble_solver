@@ -161,7 +161,7 @@ impl<'a> ScrabbleSolutionBuilder<'a> {
 
 fn scrabble_letter_score(l: Letter) -> u32 {
     if (b'A'..=b'Z').contains(&l) {
-        //capitals, the blank equivalents of normal boardLetters have zero points
+        //capitals, the blank equivalents of normal letters have zero points
         0
     } else if (b'a'..=b'z').contains(&l) {
         let idx = (l - b'a') as usize;
@@ -292,7 +292,7 @@ impl ScrabbleBoard {
         let prev_coord = coord.prev(dir);
         if self.is_coord_in_bounds(prev_coord) &&
             self.letters.get_unchecked(prev_coord).is_some() {
-            //Only start on occupied boardLetters if there is nothing coming before them
+            //Only start on occupied placedLetters if there is nothing coming before them
             return Vec::new();
         }
 
@@ -317,21 +317,21 @@ impl ScrabbleBoard {
         }
 
         match self.letters.get_unchecked(coord) {
-            //No boardLetters on board at this coordinate
+            //No placedLetters on board at this coordinate
             None => {
                 //add the word so far as a solution since this is a blank
                 if solution_so_far.is_valid_solution() {
                     solutions.push(solution_so_far.build(dir, coord))
                 }
 
-                //recurse on solutions involving available boardLetters
+                //recurse on solutions involving available placedLetters
                 let letters_available =
                     &solution_so_far.letters_available;
 
                 for &bag_letter in letters_available.keys() {
                     let actual_letters = if bag_letter == WILDCARD_LETTER {
                         //If the wildcard letter is used, go through all
-                        // boardLetters in the alphabet (capital denotes the wildcard version)
+                        // placedLetters in the alphabet (capital denotes the wildcard version)
                         CAPITAL_A_TO_Z.as_bytes()
                     } else {
                         from_ref(&bag_letter)
@@ -355,7 +355,7 @@ impl ScrabbleBoard {
                         = next_trie_child {
 
 
-                            //Check that the surrounding boardLetters are valid too
+                            //Check that the surrounding letters are valid too
                             let (has_anchor, addon_score) =
                                 match self.validate_word_around(solution_so_far.dict_trie(),
                                                                 coord,

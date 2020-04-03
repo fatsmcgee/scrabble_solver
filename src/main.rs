@@ -26,8 +26,8 @@ fn main() {
             "help" => {
                 println!("print #prints board");
                 println!("undo #undoes last letter placement");
-                println!("top boardLetters [n] #find top words right/down for row/col with boardLetters, optionally limiting to top n");
-                println!("place (r,d) row col boardLetters #place boardLetters on board");
+                println!("top letters [n] #find top words right/down for row/col with letters, optionally limiting to top n");
+                println!("place (r,d) row col letters #place letters on board");
 
             },
             "print" => {
