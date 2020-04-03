@@ -30,6 +30,7 @@
                 vertical-align:center;
                 border-top: 1px solid black;
                 border-left: 1px solid black;
+                cursor:pointer;
             }
 
             .empty-cell {
@@ -38,6 +39,11 @@
 
             .tile-cell {
                 background-color: sandybrown;
+                font-size:175%;
+            }
+
+            .selected-word-cell {
+                background-color: darkgreen;
                 font-size:175%;
             }
 
@@ -65,19 +71,84 @@
                 border: 3px solid yellow;
             }
 
+            #find-top-words {
+                font-weight:bold;
+                font-size:15px;
+
+            }
+
+            #app {
+                display:flex;
+                flex-direction: row;
+                justify-content: center;
+            }
+
+            #left {
+                flex:1;
+            }
+
+            #right {
+                padding-left: 10px;
+                border-left: 3px solid black;
+                flex:1
+            }
+
+            #top-words {
+                overflow:scroll;
+                height:500px;
+                padding-top:5px;
+            }
+
+            .top-word-entry {
+                margin-bottom: 5px;
+            }
+
+            .top-word-entry-btn {
+                border: 1px solid black;
+                cursor:pointer;
+                margin-left:5px;
+            }
+
+            .hide-btn {
+                background-color:red;
+            }
+
+            .view-btn {
+                background-color:green;
+            }
+
+            .place-btn {
+                background-color:lightblue;
+            }
+
+
+
         </style>
     </head>
     <body>
         <div id="app">
             <div id="left">
-                <div id="board" class="board">
+
+                <h3>Player Letters:</h3>
+                <div>
+                    <div id="player-letters" class="player-letters" style="margin-bottom:20px">
+
+                    </div>
+                    <button id="find-top-words">
+                        Click To Generate Top Scoring Words
+                    </button>
                 </div>
 
-                <div id="player-letters" class="player-letters" style="margin-top:50px">
+                <h3>Board:</h3>
+                <div id="board" class="board" style="margin-top:20px">
                 </div>
+
             </div>
             <div id="right">
+                <h3>Top Scoring Words:</h3>
+                <div id="top-words">
 
+                </div>
             </div>
         </div>
         <script>
@@ -97,12 +168,21 @@
             const RIGHT_KEY = "ArrowRight";
             const ARROW_KEYS = [UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY];
 
+            const ROOT_URL = "http://localhost:8000";
+
             let selectedRow = undefined;
             let selectedCol = undefined;
             let selectedPlayerLetter = undefined;
 
-            let boardLetters = {}; // {7: {5:'d', 6:'o', 7:'g'}};
+            let placedLetters = {}; // {7: {5:'d', 6:'o', 7:'g'}};
             let playerLetters = new Array(7);
+
+            //Array of solution responses from server
+            let topWords = [];
+            //Top word that we are currently viewing
+            let selectedTopWordIdx = undefined;
+            //coordinates of letters in our top word
+            let selectedTopWordLetters = {}; // {7: {5:'d', 6:'o', 7:'g'}};
 
             let modifiers = [
                 'T  d   T   d  T',
@@ -140,13 +220,18 @@
                 let cell = document.createElement("div");
                 cell.classList.add("board-cell");
 
-                let letter = (boardLetters[row] ||{})[col];
+                let placedLetter = (placedLetters[row] ||{})[col];
+                let selectedTopWordLetter = (selectedTopWordLetters[row] || {})[col];
+
                 let modifier = modifiers[row][col];
 
-                if(letter) {
-                    cell.innerText = letter;
+                if(placedLetter) {
+                    cell.innerText = placedLetter;
                     cell.classList.add("tile-cell");
-                } else if (modifier !== ' ') {
+                } else if(selectedTopWordLetter) {
+                     cell.innerText = selectedTopWordLetter;
+                     cell.classList.add("selected-word-cell");
+                 } else if (modifier !== ' ') {
                     let modClass = modifierToClass[modifier];
                     cell.innerText = modifierToText[modifier];
                     cell.classList.add("modifier-cell");
@@ -210,6 +295,77 @@
                 return cell;
             }
 
+
+            function placeTopWordLetters(topWord, letterGrid){
+
+                let row = topWord.start_coord.row;
+                let col = topWord.start_coord.col;
+                let word = topWord.word;
+                for(let i = 0; i<word.length; i++){
+
+                    letterGrid[row] = letterGrid[row] || {};
+                    letterGrid[row][col] = word[i];
+
+                    if(topWord.direction === "Right"){
+                        col+=1;
+                    } else {
+                        row+=1;
+                    }
+                }
+            }
+
+            function updateSelectedWordLetters(topWord){
+                selectedTopWordLetters = {};
+                placeTopWordLetters(topWord, selectedTopWordLetters);
+            }
+
+            function createTopWordEntry(listIdx, topWord){
+                let entry = document.createElement("div");
+                entry.classList.add("top-word-entry");
+                let text = `${topWord.word} (${topWord.score} points)`;
+                entry.append(text);
+
+                let viewEntryBtn = document.createElement("span");
+                viewEntryBtn.classList.add("top-word-entry-btn");
+
+                if(listIdx === selectedTopWordIdx) {
+                    viewEntryBtn.innerText = "Hide";
+                    viewEntryBtn.classList.add("hide-btn")
+                } else {
+                    viewEntryBtn.innerText = "View";
+                    viewEntryBtn.classList.add("view-btn")
+                }
+
+
+                viewEntryBtn.onclick = () => {
+                  if(selectedTopWordIdx === listIdx) {
+                      //hide the word
+                      selectedTopWordIdx = undefined;
+                      selectedTopWordLetters = {};
+                  } else {
+                      //show the word on the board
+                      updateSelectedWordLetters(topWord);
+                      selectedTopWordIdx = listIdx;
+                  }
+                  render();
+                };
+
+                let placeEntryBtn = document.createElement("span");
+                placeEntryBtn.innerText = "Place";
+                placeEntryBtn.classList.add("top-word-entry-btn", "place-btn");
+                placeEntryBtn.onclick = () => {
+                    placeTopWordLetters(topWord, placedLetters);
+                    render();
+                };
+
+
+
+                entry.append(viewEntryBtn);
+                entry.append(placeEntryBtn);
+                return entry;
+
+            }
+
             function renderPlayerLetters(){
                 let playerLettersDiv = document.getElementById("player-letters");
                 playerLettersDiv.innerHTML = "";
@@ -219,15 +375,24 @@
                 }
             }
 
+            function renderTopWords(){
+                let topWordsDiv = document.getElementById("top-words");
+                topWordsDiv.innerHTML = "";
+                for(const [idx,topWord] of topWords.entries()) {
+                    let topWordEntry = createTopWordEntry(idx, topWord);
+                    topWordsDiv.append(topWordEntry);
+                }
+            }
+
             function render(){
                 renderBoard();
                 renderPlayerLetters();
+                renderTopWords();
             }
 
             window.onkeyup = function(evt) {
               let key = evt.key;
               let keyCode = key.charCodeAt(0);
-              console.log(key);
 
               function isAlphaChar(key){
                   return key.length===1 &&
@@ -251,13 +416,13 @@
 
                    if (isAlphaChar(key)) {
                        // place a letter on the board
-                          boardLetters[selectedRow] = boardLetters[selectedRow] || {};
-                          boardLetters[selectedRow][selectedCol] = key;
+                          placedLetters[selectedRow] = placedLetters[selectedRow] || {};
+                          placedLetters[selectedRow][selectedCol] = key;
                           render();
                   } else if (isBackspace(key)) {
                        // delete a letter on the board
-                       boardLetters[selectedRow] = boardLetters[selectedRow] || {};
-                       boardLetters[selectedRow][selectedCol] = undefined;
+                       placedLetters[selectedRow] = placedLetters[selectedRow] || {};
+                       placedLetters[selectedRow][selectedCol] = undefined;
                        render();
                   } else if (isArrow(key)) {
                        // move the selected board position
@@ -298,6 +463,46 @@
                     e.preventDefault();
                 }
             }, false);
+
+            const findTopWordsBtn = document.getElementById("find-top-words");
+
+            findTopWordsBtn.onclick = function(evt) {
+                function createBoardSpecParam(){
+                    let specParts = [];
+                    for(let [rowIdx,row] of Object.entries(placedLetters)) {
+                        for (let [colIdx, letter] of Object.entries(row)) {
+                            if(letter !== undefined) {
+                                specParts.push(`${rowIdx},${colIdx},${letter}`);
+                            }
+                        }
+                    }
+                    let spec = specParts.join(';');
+                    return spec;
+                }
+
+                function createPlayerLettersParam(){
+                    return playerLetters.filter(l => l!==undefined)
+                        .map(l => l === ' ' ? '*': l)
+                        .join('');
+                }
+
+                let boardSpecParam = createBoardSpecParam();
+                let playerLettersParam = createPlayerLettersParam();
+                let url = `${ROOT_URL}/solutions?board_letters=${playerLettersParam}&board_spec=${boardSpecParam}`;
+                fetch(url)
+                    .then(resp => resp.json())
+                    .then(jsonResp => {
+                        if(jsonResp.error !== null){
+                            alert(jsonResp.error);
+                        } else {
+                            topWords = jsonResp.solutions;
+                            selectedTopWordIdx = undefined;
+                            selectedTopWordLetters = {};
+                            render();
+                        }
+                    });
+
+            };
 
             //Initial rendering of the board
             render();
