@@ -1,0 +1,191 @@
+<html>
+    <head>
+        <!--https://codepen.io/jeansarlon/pen/WpZNda-->
+        <style>
+            .board {
+                width:675px;
+                display:grid;
+                grid-template-columns: repeat(15, 45px);
+                grid-template-rows: repeat(15, 45px);
+                grid-gap:0px;
+                grid-auto-flow:row;
+                background-color: black;
+                border-bottom: 1px solid black;
+                border-right: 1px solid black;
+            }
+
+            .board-cell {
+
+                color: #000;
+                text-align: center;
+                vertical-align:center;
+                border-top: 1px solid black;
+                border-left: 1px solid black;
+            }
+
+            .empty-cell {
+                background-color: tan;
+            }
+
+            .tile-cell {
+                background-color: sandybrown;
+                font-size:175%;
+            }
+
+            .modifier-cell {
+                font-size: 90%;
+            }
+
+            .double-letter-cell {
+                background-color: lightblue;
+            }
+
+            .double-word-cell {
+                background-color:pink;
+            }
+
+            .triple-letter-cell {
+                background-color: royalblue;
+            }
+
+            .triple-word-cell {
+                background-color:red;
+            }
+
+            .selected-cell {
+                border: 3px solid yellow;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <div id="board" class="board">
+
+            </div>
+        </div>
+        <script>
+
+            const LOWER_A_CODE = 'a'.charCodeAt(0);
+            const LOWER_Z_CODE = 'z'.charCodeAt(0);
+
+            const UPPER_A_CODE = 'A'.charCodeAt(0);
+            const UPPER_Z_CODE = 'Z'.charCodeAt(0);
+
+            const BACKSPACE_KEY = "Backspace";
+
+            let selectedRow = 7;
+            let selectedCol = 7;
+
+            let boardLetters = {7: {5:'d', 6:'o', 7:'g'}};
+
+            let modifiers = [
+                'T  d   T   d  T',
+                ' D   t   t   D ',
+                '  D   d d   D  ',
+                'd  D   d   D  d',
+                '    D     D    ',
+                ' t   t   t   t ',
+                '  d   d d   d  ',
+                'T  d   D   d  T',
+                '  d   d d   d  ',
+                ' t   t   t   t ',
+                '    D     D    ',
+                'd  D   d   D  d',
+                '  D   d d   D  ',
+                ' D   t   t   D ',
+                'T  d   T   d  T'
+            ];
+
+            let modifierToClass = {
+                'd': "double-letter-cell",
+                "D": "double-word-cell",
+                "t": "triple-letter-cell",
+                "T": "triple-word-cell"
+            };
+
+            let modifierToText = {
+                'd': "Double Letter",
+                'D': "Double Word",
+                "t": "Triple Letter",
+                'T': "Triple Word"
+            };
+
+            function renderCell(row,col) {
+                let cell = document.createElement("div");
+                cell.classList.add("board-cell");
+
+                let letter = (boardLetters[row] ||{})[col];
+                let modifier = modifiers[row][col];
+
+                if(letter) {
+                    cell.innerText = letter;
+                    cell.classList.add("tile-cell");
+                } else if (modifier !== ' ') {
+                    let modClass = modifierToClass[modifier];
+                    cell.innerText = modifierToText[modifier];
+                    cell.classList.add("modifier-cell");
+                    cell.classList.add(modClass);
+                } else {
+                    cell.classList.add("empty-cell");
+                }
+
+                if(selectedCol === col && selectedRow === row){
+                    cell.classList.add("selected-cell");
+                }
+
+                cell.onclick = () => {
+                    selectedCol = col;
+                    selectedRow = row;
+                    renderBoard();
+                };
+
+                return cell;
+            }
+
+            function renderBoard() {
+                let board = document.getElementById("board");
+                board.innerHTML = "";
+
+                for(let row = 0; row<15; row++) {
+                    for(let col = 0; col<15; col++) {
+                        let cell = renderCell(row,col);
+                        board.append(cell);
+                    }
+                }
+            }
+
+            renderBoard();
+
+            window.onkeyup = function(evt) {
+              let key = evt.key;
+              let keyCode = key.charCodeAt(0);
+              console.log(key);
+
+              function isAlphaChar(key){
+                  return key.length===1 &&
+                      ((keyCode >=LOWER_A_CODE && keyCode <=LOWER_Z_CODE) ||
+                      (keyCode >= UPPER_A_CODE && keyCode <=UPPER_Z_CODE));
+              }
+
+              function isBackspace(key) {
+                  return key === BACKSPACE_KEY;
+              }
+
+              if(selectedCol !== undefined && selectedRow !== undefined){
+                    //Place a letter on the board
+                   if (isAlphaChar(key)) {
+                          boardLetters[selectedRow] = boardLetters[selectedRow] || {};
+                          boardLetters[selectedRow][selectedCol] = key;
+                          renderBoard();
+                  } else if (isBackspace(key)) {
+                       boardLetters[selectedRow] = boardLetters[selectedRow] || {};
+                       boardLetters[selectedRow][selectedCol] = undefined;
+                       renderBoard();
+                  }
+              }
+            };
+
+        </script>
+    </body>
+</html>
