@@ -2,17 +2,35 @@
 #![feature(try_trait)]
 
 #[macro_use] extern crate rocket;
+extern crate rocket_cors;
 extern crate regex;
 
 
 use ScrabbleSolver::{DictionaryTrie, ScrabbleBoard, Coord, Direction, LetterBag, print_top_solutions, ScrabbleSolution};
 use rocket::State;
+use rocket::http::Method;
 use rocket_contrib::json::Json;
+use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions, AllowedMethods};
 use regex::Regex;
 use serde::Serialize;
 use std::fmt::Display;
 use std::error::Error;
 use std::ops::Try;
+
+fn make_cors() -> Cors {
+    let allowed_origins = AllowedOrigins::some_regex(&["http://localhost:.*"]);
+
+    // You can also deserialize this
+    let options = rocket_cors::CorsOptions {
+        allowed_origins,
+        allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
+        allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
+        allow_credentials: true,
+        ..Default::default()
+    };
+
+    options.to_cors().expect("Nah")
+}
 
 #[get("/")]
 fn index() -> &'static str {
@@ -27,11 +45,15 @@ fn is_word(dict_trie: State<DictionaryTrie>, word:String) -> String {
 
 
 ///
-/// board_spec: String specifying boardLetters placed on a scrabble board
+/// board_spec: String specifying placedLetters placed on a scrabble board
 /// with multiple comma separated <row>,<col>,<letter> pieces separated by semi-colon ';' e.g
 /// 3,4,a;4,5,z;
 
 fn boardspec_to_board(board_spec:&str) -> Result<ScrabbleBoard,String> {
+
+    if(board_spec == "") {
+        return Result::Ok(ScrabbleBoard::empty_scrabble_board());
+    }
 
     let mut board = ScrabbleBoard::empty_scrabble_board();
     let row_col_letter_re = Regex::new(r"^(\d+),(\d+),([a-zA-Z])$").unwrap();
@@ -66,12 +88,12 @@ struct SolutionsResponse {
     solutions:Vec<ScrabbleSolution>
 }
 
-//http://localhost:8000/solutions?letters=s&board_spec=7,5,d;7,6,o;7,7,g
-#[get("/solutions?<boardLetters>&<board_spec>")]
+//http://localhost:8000/solutions?board_letters=s&board_spec=7,5,d;7,6,o;7,7,g
+#[get("/solutions?<board_letters>&<board_spec>")]
 fn solutions(dict_trie: State<DictionaryTrie>,
-             letters:String,
+             board_letters:String,
              board_spec:String) -> Json<SolutionsResponse> {
-    let letter_bag = LetterBag::from_string(&letters);
+    let letter_bag = LetterBag::from_string(&board_letters);
     let board = boardspec_to_board(&board_spec);
     match board {
         Ok(board) => {
@@ -92,5 +114,6 @@ fn main() {
     rocket::ignite()
         .manage(DictionaryTrie::from_scrabble_ospd())
         .mount("/", routes![index, is_word, solutions])
+        .attach(make_cors())
         .launch();
 }
