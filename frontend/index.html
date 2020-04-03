@@ -9,7 +9,16 @@
                 grid-template-rows: repeat(15, 45px);
                 grid-gap:0px;
                 grid-auto-flow:row;
-                background-color: black;
+                border-bottom: 1px solid black;
+                border-right: 1px solid black;
+            }
+
+            .player-letters {
+                width:315px;
+                display:grid;
+                grid-template-columns: repeat(7, 45px);
+                grid-template-rows: 45px;
+                grid-gap:0px;
                 border-bottom: 1px solid black;
                 border-right: 1px solid black;
             }
@@ -60,7 +69,14 @@
     </head>
     <body>
         <div id="app">
-            <div id="board" class="board">
+            <div id="left">
+                <div id="board" class="board">
+                </div>
+
+                <div id="player-letters" class="player-letters" style="margin-top:50px">
+                </div>
+            </div>
+            <div id="right">
 
             </div>
         </div>
@@ -73,11 +89,20 @@
             const UPPER_Z_CODE = 'Z'.charCodeAt(0);
 
             const BACKSPACE_KEY = "Backspace";
+            const SPACE_KEY = " ";
 
-            let selectedRow = 7;
-            let selectedCol = 7;
+            const UP_KEY = "ArrowUp";
+            const DOWN_KEY = "ArrowDown";
+            const LEFT_KEY = "ArrowLeft";
+            const RIGHT_KEY = "ArrowRight";
+            const ARROW_KEYS = [UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY];
 
-            let boardLetters = {7: {5:'d', 6:'o', 7:'g'}};
+            let selectedRow = undefined;
+            let selectedCol = undefined;
+            let selectedPlayerLetter = undefined;
+
+            let boardLetters = {}; // {7: {5:'d', 6:'o', 7:'g'}};
+            let playerLetters = new Array(7);
 
             let modifiers = [
                 'T  d   T   d  T',
@@ -111,7 +136,7 @@
                 'T': "Triple Word"
             };
 
-            function renderCell(row,col) {
+            function createBoardCell(row, col) {
                 let cell = document.createElement("div");
                 cell.classList.add("board-cell");
 
@@ -137,7 +162,8 @@
                 cell.onclick = () => {
                     selectedCol = col;
                     selectedRow = row;
-                    renderBoard();
+                    selectedPlayerLetter = undefined;
+                    render();
                 };
 
                 return cell;
@@ -149,13 +175,54 @@
 
                 for(let row = 0; row<15; row++) {
                     for(let col = 0; col<15; col++) {
-                        let cell = renderCell(row,col);
+                        let cell = createBoardCell(row,col);
                         board.append(cell);
                     }
                 }
             }
 
-            renderBoard();
+            function createPlayerLetterCell(letterIdx){
+                let cell = document.createElement("div");
+                cell.classList.add("board-cell");
+
+                let letter = playerLetters[letterIdx];
+
+                if(letter) {
+                    cell.innerText = letter;
+                    cell.classList.add("tile-cell");
+                } else {
+                    cell.classList.add("empty-cell");
+                }
+
+
+                cell.onclick = () => {
+                    selectedCol = undefined;
+                    selectedRow = undefined;
+                    selectedPlayerLetter = letterIdx;
+                    render();
+                };
+
+
+                if(selectedPlayerLetter === letterIdx){
+                    cell.classList.add("selected-cell");
+                }
+
+                return cell;
+            }
+
+            function renderPlayerLetters(){
+                let playerLettersDiv = document.getElementById("player-letters");
+                playerLettersDiv.innerHTML = "";
+                for(let i = 0; i<7; i++){
+                    let cell = createPlayerLetterCell(i);
+                    playerLettersDiv.append(cell);
+                }
+            }
+
+            function render(){
+                renderBoard();
+                renderPlayerLetters();
+            }
 
             window.onkeyup = function(evt) {
               let key = evt.key;
@@ -172,19 +239,68 @@
                   return key === BACKSPACE_KEY;
               }
 
+              function isSpace(key){
+                  return key === SPACE_KEY;
+              }
+
+              function isArrow(key) {
+                  return ARROW_KEYS.includes(key);
+              }
+
               if(selectedCol !== undefined && selectedRow !== undefined){
-                    //Place a letter on the board
+
                    if (isAlphaChar(key)) {
+                       // place a letter on the board
                           boardLetters[selectedRow] = boardLetters[selectedRow] || {};
                           boardLetters[selectedRow][selectedCol] = key;
-                          renderBoard();
+                          render();
                   } else if (isBackspace(key)) {
+                       // delete a letter on the board
                        boardLetters[selectedRow] = boardLetters[selectedRow] || {};
                        boardLetters[selectedRow][selectedCol] = undefined;
-                       renderBoard();
-                  }
+                       render();
+                  } else if (isArrow(key)) {
+                       // move the selected board position
+                       let keyToMovement = {
+                         [UP_KEY]:[-1,0],
+                         [DOWN_KEY]:[1,0],
+                         [RIGHT_KEY]:[0,1],
+                         [LEFT_KEY]:[0,-1]
+                       };
+                       let dRow = keyToMovement[key][0];
+                       let dCol = keyToMovement[key][1];
+
+                       selectedRow = (selectedRow + dRow + 15)%15;
+                       selectedCol = (selectedCol + dCol + 15)%15;
+                       render();
+                   }
+              } else if (selectedPlayerLetter !== undefined) {
+                if(isAlphaChar(key) || isSpace(key)) {
+                    //add player tile
+                    playerLetters[selectedPlayerLetter] = key;
+                    render();
+                } else if (isBackspace(key)) {
+                    //delete player tile
+                    playerLetters[selectedPlayerLetter] = undefined;
+                    render();
+                } else if (key === LEFT_KEY || key === RIGHT_KEY) {
+                    let dTile = (key===RIGHT_KEY) || -1;
+                    selectedPlayerLetter = (selectedPlayerLetter + dTile + 7)%7;
+                    render();
+                }
               }
             };
+
+            //Prevent space/arrow keys from scrolling the page
+            window.addEventListener("keydown", function(e) {
+                // space and arrow keys
+                if([UP_KEY,DOWN_KEY,LEFT_KEY,RIGHT_KEY,SPACE_KEY].includes(e.key)) {
+                    e.preventDefault();
+                }
+            }, false);
+
+            //Initial rendering of the board
+            render();
 
         </script>
     </body>
