@@ -27,7 +27,7 @@ fn is_word(dict_trie: State<DictionaryTrie>, word:String) -> String {
 
 
 ///
-/// board_spec: String specifying letters placed on a scrabble board
+/// board_spec: String specifying boardLetters placed on a scrabble board
 /// with multiple comma separated <row>,<col>,<letter> pieces separated by semi-colon ';' e.g
 /// 3,4,a;4,5,z;
 
@@ -50,7 +50,7 @@ fn boardspec_to_board(board_spec:&str) -> Result<ScrabbleBoard,String> {
             let letter = captures.get(3).unwrap().as_str().as_bytes()[0];
 
             let coord = Coord::new(row,col);
-            board.set_letter(coord, letter);
+            board.set_letter_unchecked(coord, letter);
         } else {
             return Result::Err(format!("{} is not in row,col,letter format", spec_part));
         }
@@ -67,7 +67,7 @@ struct SolutionsResponse {
 }
 
 //http://localhost:8000/solutions?letters=s&board_spec=7,5,d;7,6,o;7,7,g
-#[get("/solutions?<letters>&<board_spec>")]
+#[get("/solutions?<boardLetters>&<board_spec>")]
 fn solutions(dict_trie: State<DictionaryTrie>,
              letters:String,
              board_spec:String) -> Json<SolutionsResponse> {
