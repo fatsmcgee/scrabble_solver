@@ -81,7 +81,7 @@ impl<T> Grid<T> {
         self.storage[offset].clone()
     }
 
-    pub fn set(&mut self, coord: Coord, val: T) {
+    pub fn set_unchecked(&mut self, coord: Coord, val: T) {
         let offset = self.offset(coord);
         self.storage[offset] = val;
     }

@@ -161,7 +161,7 @@ impl<'a> ScrabbleSolutionBuilder<'a> {
 
 fn scrabble_letter_score(l: Letter) -> u32 {
     if (b'A'..=b'Z').contains(&l) {
-        //capitals, the blank equivalents of normal letters have zero points
+        //capitals, the blank equivalents of normal boardLetters have zero points
         0
     } else if (b'a'..=b'z').contains(&l) {
         let idx = (l - b'a') as usize;
@@ -225,13 +225,13 @@ impl ScrabbleBoard {
     pub fn add_word(&mut self, coord:Coord, direction:Direction, word:&str) {
         let mut cur_coord = coord;
         for l in word.bytes() {
-            self.set_letter(cur_coord, l);
+            self.set_letter_unchecked(cur_coord, l);
             cur_coord = cur_coord.next(direction);
         }
     }
 
-    pub fn set_letter(&mut self, coord: Coord, l: Letter) {
-        self.letters.set(coord, Some(l))
+    pub fn set_letter_unchecked(&mut self, coord: Coord, l: Letter) {
+        self.letters.set_unchecked(coord, Some(l))
     }
 
     pub fn print_board(&self) {
@@ -292,7 +292,7 @@ impl ScrabbleBoard {
         let prev_coord = coord.prev(dir);
         if self.is_coord_in_bounds(prev_coord) &&
             self.letters.get_unchecked(prev_coord).is_some() {
-            //Only start on occupied letters if there is nothing coming before them
+            //Only start on occupied boardLetters if there is nothing coming before them
             return Vec::new();
         }
 
@@ -317,21 +317,21 @@ impl ScrabbleBoard {
         }
 
         match self.letters.get_unchecked(coord) {
-            //No letters on board at this coordinate
+            //No boardLetters on board at this coordinate
             None => {
                 //add the word so far as a solution since this is a blank
                 if solution_so_far.is_valid_solution() {
                     solutions.push(solution_so_far.build(dir, coord))
                 }
 
-                //recurse on solutions involving available letters
+                //recurse on solutions involving available boardLetters
                 let letters_available =
                     &solution_so_far.letters_available;
 
                 for &bag_letter in letters_available.keys() {
                     let actual_letters = if bag_letter == WILDCARD_LETTER {
                         //If the wildcard letter is used, go through all
-                        // letters in the alphabet (capital denotes the wildcard version)
+                        // boardLetters in the alphabet (capital denotes the wildcard version)
                         CAPITAL_A_TO_Z.as_bytes()
                     } else {
                         from_ref(&bag_letter)
@@ -355,7 +355,7 @@ impl ScrabbleBoard {
                         = next_trie_child {
 
 
-                            //Check that the surrounding letters are valid too
+                            //Check that the surrounding boardLetters are valid too
                             let (has_anchor, addon_score) =
                                 match self.validate_word_around(solution_so_far.dict_trie(),
                                                                 coord,
@@ -495,7 +495,7 @@ mod tests {
     #[test]
     fn empty_scrabble_board_works() {
         let mut b = ScrabbleBoard::empty_scrabble_board();
-        b.set_letter(Coord::new(0, 0), b'a');
+        b.set_letter_unchecked(Coord::new(0, 0), b'a');
         println!("Hi");
         b.print_board();
     }
@@ -527,9 +527,9 @@ mod tests {
     fn get_anchored_solutions() {
         let dict = DictionaryTrie::from_scrabble_ospd();
         let mut board = ScrabbleBoard::empty_scrabble_board();
-        board.set_letter(Coord::new(6, 7), b'g');
-        board.set_letter(Coord::new(7, 7), b'o');
-        board.set_letter(Coord::new(8, 7), b'd');
+        board.set_letter_unchecked(Coord::new(6, 7), b'g');
+        board.set_letter_unchecked(Coord::new(7, 7), b'o');
+        board.set_letter_unchecked(Coord::new(8, 7), b'd');
 
         let letters =
             LetterBag::from_string("d");
