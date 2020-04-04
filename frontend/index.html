@@ -121,6 +121,10 @@
                 background-color:lightblue;
             }
 
+            button {
+                cursor:pointer
+            }
+
 
 
         </style>
@@ -464,10 +468,12 @@
                 if(isAlphaChar(key) || isSpace(key)) {
                     //add player tile
                     playerLetters[selectedPlayerLetter] = key;
+                    selectedPlayerLetter = Math.min(selectedPlayerLetter+1, 6);
                     render();
                 } else if (isBackspace(key)) {
                     //delete player tile
                     playerLetters[selectedPlayerLetter] = undefined;
+                    selectedPlayerLetter = Math.max(selectedPlayerLetter-1, 0);
                     render();
                 } else if (key === LEFT_KEY || key === RIGHT_KEY) {
                     let dTile = (key===RIGHT_KEY) || -1;
