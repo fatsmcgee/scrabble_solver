@@ -422,7 +422,7 @@ impl ScrabbleBoard {
                                         (false, 0)
                                     }
                                     WordAroundValidation::ValidWordScore(score) => {
-                                        (false, score)
+                                        (true, score)
                                     }
                                 };
 
@@ -581,9 +581,7 @@ mod tests {
     fn get_anchored_solutions() {
         let dict = DictionaryTrie::from_scrabble_ospd();
         let mut board = ScrabbleBoard::empty_scrabble_board();
-        board.set_letter_unchecked(Coord::new(6, 7), b'g');
-        board.set_letter_unchecked(Coord::new(7, 7), b'o');
-        board.set_letter_unchecked(Coord::new(8, 7), b'd');
+        board.add_word(Coord::new(6,7), Direction::Down, "god");
 
         let letters =
             LetterBag::from_string("d");
@@ -595,6 +593,23 @@ mod tests {
 
         assert_eq!(right_solutions.len(), 1);
         assert_eq!(right_solutions[0].word, "do");
+
+        let mut board = ScrabbleBoard::empty_scrabble_board();
+        board.add_word(Coord::new(7,7), Direction::Right,"dog");
+        let letters = LetterBag::from_string("ad");
+
+
+        let right_solutions = board.find_valid_words_coord(Coord::new(6, 7),
+                                                           Direction::Right,
+                                                           letters,
+                                                           &dict);
+        let num_target_solutions = right_solutions.iter().filter(|s|
+            s.word==String::from("ad") &&
+            s.start_coord==Coord::new(6,7) &&
+            s.direction == Direction::Right).count();
+        assert_eq!(num_target_solutions, 1);
+
+
 
     }
 
@@ -646,4 +661,6 @@ mod tests {
                                        Direction::Right,
                                        1));
     }
+
+
 }

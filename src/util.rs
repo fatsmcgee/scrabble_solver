@@ -3,7 +3,7 @@ use serde::Serialize;
 pub type Letter = u8;
 pub type Word = String;
 
-#[derive(Clone, Copy, Serialize)]
+#[derive(Clone, Copy, Serialize, PartialEq)]
 pub enum Direction {
     Right,
     Down,
