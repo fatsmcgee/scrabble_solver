@@ -273,7 +273,7 @@
                     selectedCol = col;
                     selectedRow = row;
                     selectedPlayerLetter = undefined;
-                    render();
+                    renderLeft();
                 };
 
                 return cell;
@@ -309,7 +309,7 @@
                     selectedCol = undefined;
                     selectedRow = undefined;
                     selectedPlayerLetter = letterIdx;
-                    render();
+                    renderLeft();
                 };
 
 
@@ -409,77 +409,95 @@
                 }
             }
 
+            function renderLeft(){
+                renderBoard();
+                renderPlayerLetters();
+            }
+
             function render(){
                 renderBoard();
                 renderPlayerLetters();
                 renderTopWords();
             }
 
-            window.onkeyup = function(evt) {
-              let key = evt.key;
-              let keyCode = key.charCodeAt(0);
+            function isBoardSelected(){
+                return selectedCol !== undefined && selectedRow !== undefined;
+            }
 
-              function isAlphaChar(key){
-                  return key.length===1 &&
-                      ((keyCode >=LOWER_A_CODE && keyCode <=LOWER_Z_CODE) ||
-                      (keyCode >= UPPER_A_CODE && keyCode <=UPPER_Z_CODE));
-              }
+            function isPlayerLettersSelected(){
+                return selectedPlayerLetter !== undefined;
+            }
 
-              function isBackspace(key) {
-                  return key === BACKSPACE_KEY;
-              }
+            function isAlphaChar(key){
+                let keyCode = key.charCodeAt(0);
+                return key.length===1 &&
+                    ((keyCode >=LOWER_A_CODE && keyCode <=LOWER_Z_CODE) ||
+                        (keyCode >= UPPER_A_CODE && keyCode <=UPPER_Z_CODE));
+            }
 
-              function isSpace(key){
-                  return key === SPACE_KEY;
-              }
+            function isBackspace(key) {
+                return key === BACKSPACE_KEY;
+            }
 
-              function isArrow(key) {
-                  return ARROW_KEYS.includes(key);
-              }
+            function isSpace(key){
+                return key === SPACE_KEY;
+            }
 
-              if(selectedCol !== undefined && selectedRow !== undefined){
+            function isArrow(key) {
+                return ARROW_KEYS.includes(key);
+            }
 
-                   if (isAlphaChar(key)) {
-                       // place a letter on the board
-                          placedLetters[selectedRow] = placedLetters[selectedRow] || {};
-                          placedLetters[selectedRow][selectedCol] = key;
-                          render();
-                  } else if (isBackspace(key)) {
-                       // delete a letter on the board
-                       placedLetters[selectedRow] = placedLetters[selectedRow] || {};
-                       placedLetters[selectedRow][selectedCol] = undefined;
-                       render();
-                  } else if (isArrow(key)) {
-                       // move the selected board position
-                       let keyToMovement = {
-                         [UP_KEY]:[-1,0],
-                         [DOWN_KEY]:[1,0],
-                         [RIGHT_KEY]:[0,1],
-                         [LEFT_KEY]:[0,-1]
-                       };
-                       let dRow = keyToMovement[key][0];
-                       let dCol = keyToMovement[key][1];
+            function handleKeyupOnBoard(key){
+                if (isAlphaChar(key)) {
+                    // place a letter on the board
+                    placedLetters[selectedRow] = placedLetters[selectedRow] || {};
+                    placedLetters[selectedRow][selectedCol] = key;
+                } else if (isBackspace(key)) {
+                    // delete a letter on the board
+                    placedLetters[selectedRow] = placedLetters[selectedRow] || {};
+                    placedLetters[selectedRow][selectedCol] = undefined;
+                } else if (isArrow(key)) {
+                    // move the selected board position
+                    let keyToMovement = {
+                        [UP_KEY]:[-1,0],
+                        [DOWN_KEY]:[1,0],
+                        [RIGHT_KEY]:[0,1],
+                        [LEFT_KEY]:[0,-1]
+                    };
+                    let dRow = keyToMovement[key][0];
+                    let dCol = keyToMovement[key][1];
 
-                       selectedRow = (selectedRow + dRow + 15)%15;
-                       selectedCol = (selectedCol + dCol + 15)%15;
-                       render();
-                   }
-              } else if (selectedPlayerLetter !== undefined) {
+                    selectedRow = (selectedRow + dRow + 15)%15;
+                    selectedCol = (selectedCol + dCol + 15)%15;
+                }
+
+                renderLeft();
+            }
+
+            function handleKeyupOnPlayerLetters(key){
                 if(isAlphaChar(key) || isSpace(key)) {
                     //add player tile
                     playerLetters[selectedPlayerLetter] = key;
                     selectedPlayerLetter = Math.min(selectedPlayerLetter+1, 6);
-                    render();
                 } else if (isBackspace(key)) {
                     //delete player tile
                     playerLetters[selectedPlayerLetter] = undefined;
                     selectedPlayerLetter = Math.max(selectedPlayerLetter-1, 0);
-                    render();
                 } else if (key === LEFT_KEY || key === RIGHT_KEY) {
                     let dTile = (key===RIGHT_KEY) || -1;
                     selectedPlayerLetter = (selectedPlayerLetter + dTile + 7)%7;
-                    render();
                 }
+
+                renderLeft();
+            }
+
+            window.onkeyup = function(evt) {
+              let key = evt.key;
+
+              if(isBoardSelected()){
+                   handleKeyupOnBoard(key);
+              } else if (isPlayerLettersSelected()) {
+               handleKeyupOnPlayerLetters(key);
               }
             };
 
