@@ -51,6 +51,10 @@ impl VecLetterBag {
             .filter(|t| t.1>0)
             .map(|t| &t.0)
     }
+
+    pub fn size(&self) -> u32 {
+        return self.bag.iter().map(|(letter,count)| count).sum();
+    }
 }
 
 #[derive(Clone)]
@@ -94,4 +98,22 @@ impl HashLetterBag {
     pub fn keys(&self) -> impl Iterator<Item=&u8> {
         self.bag.keys()
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn size_tests() {
+        let lb = LetterBag::from_string("");
+        assert_eq!(lb.size(), 0);
+
+        let lb = LetterBag::from_string("abc");
+        assert_eq!(lb.size(), 3);
+
+        let lb = LetterBag::from_string("abca");
+        assert_eq!(lb.size(),4);
+    }
+
 }

@@ -76,6 +76,11 @@ impl<T> Grid<T> {
         (coord.row as usize) * self.ncols + (coord.col as usize)
     }
 
+    pub fn get(&self, coord: Coord) -> Option<T> where T: Clone {
+        let offset = self.offset(coord);
+        self.storage.get(offset).cloned()
+    }
+
     pub fn get_unchecked(&self, coord: Coord) -> T where T: Clone {
         let offset = self.offset(coord);
         self.storage[offset].clone()

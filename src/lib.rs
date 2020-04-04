@@ -264,6 +264,60 @@ impl ScrabbleBoard {
         self.letters.is_coord_in_bounds(coord)
     }
 
+    fn has_letter_at_coord(&self, coord:Coord) -> bool {
+        if let Some(Some(_)) = self.letters.get(coord) {
+            true
+        } else {
+            false
+        }
+    }
+
+    fn has_letter_at_previous_coord(&self, coord:Coord, dir:Direction) -> bool {
+        self.has_letter_at_coord(coord.prev(dir))
+    }
+
+    fn can_reach_anchor(&self,
+                        start_coord: Coord,
+                        dir: Direction,
+                        num_letters: u32) -> bool {
+        let mut letters_left = num_letters;
+        let mut coord = start_coord;
+        while self.is_coord_in_bounds(coord) && (letters_left>0 || self.has_letter_at_coord(coord)) {
+            if self.has_letter_at_coord(coord) {
+                if letters_left < num_letters {
+                    return true;
+                }
+            } else {
+                if self.is_middle(coord) {
+                    return true;
+                }
+
+                let other_dir = dir.rotate();
+                if self.has_letter_at_coord(coord.prev(other_dir)) ||
+                    self.has_letter_at_coord(coord.next(other_dir)) {
+                    return true;
+                }
+
+                letters_left -= 1;
+            }
+
+            coord = coord.next(dir);
+        }
+
+        false
+    }
+
+    fn is_valid_starting_point(&self,
+                                start_coord:Coord,
+                                dir:Direction,
+                                num_letters: u32) -> bool {
+        //We can start a word anywhere where there isn't a previous letter,
+        // and where it is possible to reach a connection to another letter on the board
+        !self.has_letter_at_previous_coord(start_coord, dir)
+            && self.can_reach_anchor(start_coord, dir, num_letters)
+
+    }
+
     pub fn find_all_valid_words(&self,
                                 letters_available:&LetterBag,
                                 dict: &DictionaryTrie) -> Vec<ScrabbleSolution> {
@@ -290,9 +344,9 @@ impl ScrabbleBoard {
                               dict: &DictionaryTrie) -> Vec<ScrabbleSolution> {
 
         let prev_coord = coord.prev(dir);
-        if self.is_coord_in_bounds(prev_coord) &&
-            self.letters.get_unchecked(prev_coord).is_some() {
-            //Only start on occupied placedLetters if there is nothing coming before them
+        if !self.is_valid_starting_point(coord,
+                                         dir,
+                                         letters_available.size()) {
             return Vec::new();
         }
 
@@ -549,5 +603,47 @@ mod tests {
         let score1 =
             scrabble_letters_score_utf8(&Vec::from("za".as_bytes()));
         assert_eq!(score1, 11);
+    }
+
+    #[test]
+    fn test_can_reach_anchor() {
+        let mut board = ScrabbleBoard::empty_scrabble_board();
+        assert!(board.can_reach_anchor(Coord::new(7,6),
+                                       Direction::Right,
+        2));
+        assert!(board.can_reach_anchor(Coord::new(7,5),
+                                       Direction::Right,
+                                       3));
+
+        assert!(board.can_reach_anchor(Coord::new(7,7),
+                                       Direction::Right,
+                                       1));
+
+        assert!(board.can_reach_anchor(Coord::new(6,7),
+                                       Direction::Down,
+                                       2));
+
+        assert!(!board.can_reach_anchor(Coord::new(6,7),
+                                       Direction::Down,
+                                       1));
+
+
+        board.add_word(Coord::new(7,5), Direction::Right, "lolcatz");
+        board.add_word(Coord::new(6,6), Direction::Down, "goalie");
+
+        assert!(board.can_reach_anchor(Coord::new(7,4),
+                                       Direction::Right,
+                                       1));
+        assert!(board.can_reach_anchor(Coord::new(7,3),
+                                       Direction::Right,
+                                       2));
+
+        assert!(board.can_reach_anchor(Coord::new(6,7),
+                                       Direction::Down,
+                                       1));
+
+        assert!(board.can_reach_anchor(Coord::new(6,7),
+                                       Direction::Right,
+                                       1));
     }
 }
