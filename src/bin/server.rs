@@ -2,7 +2,6 @@
 #![feature(try_trait)]
 
 #[macro_use] extern crate rocket;
-extern crate rocket_cors;
 extern crate regex;
 
 
@@ -10,32 +9,13 @@ use ScrabbleSolver::{DictionaryTrie, ScrabbleBoard, Coord, Direction, LetterBag,
 use rocket::State;
 use rocket::http::Method;
 use rocket_contrib::json::Json;
-use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions, AllowedMethods};
+use rocket_contrib::serve::StaticFiles;
 use regex::Regex;
 use serde::Serialize;
 use std::fmt::Display;
 use std::error::Error;
 use std::ops::Try;
 
-fn make_cors() -> Cors {
-    let allowed_origins = AllowedOrigins::some_regex(&["http://localhost:.*"]);
-
-    // You can also deserialize this
-    let options = rocket_cors::CorsOptions {
-        allowed_origins,
-        allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
-        allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
-        allow_credentials: true,
-        ..Default::default()
-    };
-
-    options.to_cors().expect("Nah")
-}
-
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
-}
 
 //http://localhost:8000/is_word?word=dog
 #[get("/is_word?<word>")]
@@ -110,10 +90,9 @@ fn solutions(dict_trie: State<DictionaryTrie>,
 }
 
 fn main() {
-
     rocket::ignite()
         .manage(DictionaryTrie::from_scrabble_ospd())
-        .mount("/", routes![index, is_word, solutions])
-        .attach(make_cors())
+        .mount("/", routes![is_word, solutions])
+        .mount("/", StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/frontend")))
         .launch();
 }
