@@ -135,6 +135,9 @@
                         Click on positions <a href="#board-header">on the board</a> or slots on <a href="#player-letters-header">player letters</a>
                         and type to add letters to the board/your hand.
                     </li>
+		    <li>
+			Hit backspace to delete existing tiles/board letters.
+		    </li>
                     <li>
                          On the board, type in capital letters to signify blanks (e.g "A" is a blank tile whose value is "a").
                     </li>
@@ -187,8 +190,6 @@
             const LEFT_KEY = "ArrowLeft";
             const RIGHT_KEY = "ArrowRight";
             const ARROW_KEYS = [UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY];
-
-            const ROOT_URL = "http://localhost:8000";
 
             let selectedRow = undefined;
             let selectedCol = undefined;
@@ -508,7 +509,7 @@
 
                 let boardSpecParam = createBoardSpecParam();
                 let playerLettersParam = createPlayerLettersParam();
-                let url = `${ROOT_URL}/solutions?board_letters=${playerLettersParam}&board_spec=${boardSpecParam}`;
+                let url = `/solutions?board_letters=${playerLettersParam}&board_spec=${boardSpecParam}`;
                 fetch(url)
                     .then(resp => resp.json())
                     .then(jsonResp => {
