@@ -1,6 +1,5 @@
 <html>
     <head>
-        <!--https://codepen.io/jeansarlon/pen/WpZNda-->
         <style>
             .board {
                 width:675px;
@@ -94,8 +93,8 @@
             }
 
             #top-words {
-                overflow:scroll;
-                height:500px;
+                max-height:500px;
+                width:max-content;
                 padding-top:5px;
             }
 
@@ -124,12 +123,12 @@
             button {
                 cursor:pointer
             }
-
-
-
         </style>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/clusterize.js/0.18.0/clusterize.min.css" rel="stylesheet">
     </head>
     <body>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/clusterize.js/0.18.0/clusterize.min.js"></script>
         <script src="https://unpkg.com/mithril/mithril.js"></script>
         <script>
 
@@ -301,51 +300,81 @@
               }
             };
 
-            let TopWordEntry = {
-                view: (vnode) => {
-                    let listIdx = vnode.attrs.listIdx;
-                    let topWord = vnode.attrs.topWord;
-                    let isSelectedTopWord = listIdx === selectedTopWordIdx;
-                    return m("div",
-                        {class:"top-word-entry"},
-                        [
-                            `${topWord.word} (${topWord.score} points)`,
-                            m("span.top-word-entry-btn",
-                                {
-                                    class: isSelectedTopWord? "hide-btn": "view-btn",
-                                    onclick: () => {
-                                        if(isSelectedTopWord){
-                                            selectedTopWordIdx = undefined;
-                                            selectedTopWordLetters = {};
-                                        } else {
-                                            updateSelectedWordLetters(topWord);
-                                            selectedTopWordIdx = listIdx;
-                                        }
-                                    }
-                                },
-                                isSelectedTopWord? "Hide": "View"
-                            ),
-                            m("span.top-word-entry-btn.place-btn",
-                                {
-                                    onclick: () => placeTopWordLetters(topWord, placedLetters)
-                                },
-                                "Place"
-                            )
-                        ]
-                    );
-                }
-            };
+            function TopWords(){
 
-            let TopWords = {
-                view: () => {
-                    let children = [];
-                    for(const [idx,topWord] of topWords.entries()) {
-                        let topWordEntry = m(TopWordEntry, {listIdx:idx, topWord:topWord});
-                        children.push(topWordEntry);
-                    }
-                    return m("div#top-words", children);
+                //Instance of clusterize.js
+                let clusterize;
+
+                function updateClusterize(topWords){
+                    let topWordsRows = topWords.map( (topWord,idx) => {
+
+                        let entryBeingViewed = idx === selectedTopWordIdx;
+                        let viewHideClass = entryBeingViewed? "hide-btn" : "view-btn";
+                        let viewHideText = entryBeingViewed? "Hide": "View";
+                        return `<div>
+                                    ${topWord.word} (${topWord.score}) points
+                                    <span data-index="${idx}" class="top-word-entry-btn ${viewHideClass}">
+                                        ${viewHideText}
+                                    </span>
+                                    <span data-index="${idx}" class="top-word-entry-btn place-btn" style="margin-right:20px">
+                                        Place
+                                    </span>
+                                </div>
+                                    `;
+                    });
+                    clusterize.update(topWordsRows);
                 }
-            };
+
+                let component = {
+                    oncreate: (vnode) => {
+
+                        clusterize = new Clusterize({
+                            rows:[],
+                            scrollId:"top-words",
+                            contentId:"top-words-content"
+                        });
+
+
+                        vnode.dom.onclick = (evt) => {
+                            let target = evt.target;
+                            let classList = target.classList;
+                            if(!classList.contains("top-word-entry-btn")) {
+                                return;
+                            }
+
+                            let index = +target.attributes['data-index'].value;
+                            let topWord = topWords[index];
+
+                            if(classList.contains("place-btn")){
+                                placeTopWordLetters(topWord, placedLetters);
+                                //Redraw letters that exist on the board
+
+                            } else if (classList.contains("view-btn")) {
+                                updateSelectedWordLetters(topWord);
+                                selectedTopWordIdx = index;
+                            } else if (classList.contains("hide-btn")){
+                                selectedTopWordIdx = undefined;
+                                selectedTopWordLetters = {};
+                            }
+
+                            updateClusterize(topWords);
+                            m.redraw();
+                        };
+                    },
+                    onupdate: (vnode) => {
+                        updateClusterize(vnode.attrs.topWords);
+                    },
+                    view: () => {
+                        return m("div#top-words.clusterize-scroll", [
+                            m("div#top-words-content.clusterize-content", [
+                                m("div.clusterize-no-data", "")
+                            ])
+                        ]);
+                    }
+                };
+
+                return component;
+            }
 
             let App = {
                 view: () =>
@@ -363,7 +392,7 @@
                         ]),
                         m("#right", [
                             m("h3", "Top Scoring Words:"),
-                            m(TopWords)
+                            m(TopWords, {topWords:topWords})
                         ])
                     ])
             };
