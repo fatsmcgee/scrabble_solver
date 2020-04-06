@@ -158,20 +158,6 @@
                 `Click the button below player letters to generate the top scoring words for the board.`
             ];
 
-
-            let selectedCol = undefined;
-            let selectedRow = undefined;
-            let selectedPlayerLetter = undefined;
-            let playerLetters =  Array.apply(undefined, {length:7});
-            let placedLetters = {};
-
-            //Array of solution responses from server
-            let topWords = [];
-            //Top word that we are currently viewing
-            let selectedTopWordIdx = undefined;
-            //coordinates of letters in our top word
-            let selectedTopWordLetters = {}; // {7: {5:'d', 6:'o', 7:'g'}};
-
             let modifiers = [
                 'T  d   T   d  T',
                 ' D   t   t   D ',
@@ -190,6 +176,18 @@
                 'T  d   T   d  T'
             ];
 
+            let selectedCol = undefined;
+            let selectedRow = undefined;
+            let selectedPlayerLetter = undefined;
+            let playerLetters =  Array.apply(undefined, {length:7});
+            let placedLetters = {};
+
+            //Array of solution responses from backend
+            let topWords = [];
+            //Top word that we are currently viewing
+            let selectedTopWordIdx = undefined;
+            //coordinates of letters in our top word
+            let selectedTopWordLetters = {}; // {7: {5:'d', 6:'o', 7:'g'}};
 
             let PlayerLetterCell = {
               view: (vnode) => {
@@ -316,7 +314,9 @@
                                     <span data-index="${idx}" class="top-word-entry-btn ${viewHideClass}">
                                         ${viewHideText}
                                     </span>
-                                    <span data-index="${idx}" class="top-word-entry-btn place-btn" style="margin-right:20px">
+                                    <span data-index="${idx}"
+                                        class="top-word-entry-btn place-btn"
+                                        style="margin-right:20px">
                                         Place
                                     </span>
                                 </div>
